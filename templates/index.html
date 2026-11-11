@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PhishShield checks website URLs for phishing indicators using machine learning and URL analysis.">
+  <title>PhishShield | URL Security Scanner</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">⛨</span>
+        <span>Phish<span>Shield</span></span>
+      </a>
+      <span class="top-tag"><span class="live-dot"></span> LOCAL SECURITY SCANNER</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow">MACHINE LEARNING · CYBERSECURITY</div>
+        <h1>Check before<br><span>you click.</span></h1>
+        <p class="hero-copy">Analyse a website address for phishing indicators. PhishShield combines a Random Forest model with explainable URL checks.</p>
+      </section>
+
+      <section class="scanner-card">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">URL ANALYSIS</div>
+            <h2>Scan a website</h2>
+          </div>
+          <span class="lock-icon">⌑</span>
+        </div>
+
+        <form id="scan-form">
+          <label for="url-input">Website URL</label>
+          <div class="input-row">
+            <span class="input-prefix">↗</span>
+            <input id="url-input" type="text" autocomplete="url" placeholder="https://example.com" maxlength="2048" required>
+            <button id="scan-button" type="submit"><span>Scan URL</span><span aria-hidden="true">→</span></button>
+          </div>
+          <div class="input-help">Enter a domain or full URL. The submitted website is not opened.</div>
+        </form>
+
+        <div class="samples">
+          <span>Try an example:</span>
+          <button class="sample safe-sample" type="button" data-url="https://www.wikipedia.org">Normal URL</button>
+          <button class="sample risky-sample" type="button" data-url="http://paypal-security-check.example.test/login">Phishing-like URL</button>
+        </div>
+
+        <div id="error-box" class="error-box hidden" role="alert"></div>
+
+        <section id="result-card" class="result-card hidden" aria-live="polite">
+          <div class="result-top">
+            <div>
+              <div class="eyebrow">SCAN RESULT</div>
+              <h3 id="verdict-title">Result</h3>
+            </div>
+            <div id="risk-ring" class="risk-ring">
+              <strong id="risk-score">0</strong><span>/100</span>
+            </div>
+          </div>
+          <div class="scanned-url" id="scanned-url"></div>
+          <div class="score-track"><div id="score-fill" class="score-fill"></div></div>
+          <div class="score-labels"><span>Lower risk</span><span>Higher risk</span></div>
+          <div class="result-grid">
+            <div class="metric"><span>ML phishing score</span><strong id="ml-score">0%</strong></div>
+            <div class="metric"><span>URL rule score</span><strong id="rule-score">0/100</strong></div>
+          </div>
+          <div class="reason-heading">Why this result?</div>
+          <ul id="reason-list" class="reason-list"></ul>
+          <p class="disclaimer" id="disclaimer"></p>
+        </section>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card"><span>Total scans</span><strong id="stat-total">0</strong><small>URLs checked</small></div>
+        <div class="stat-card"><span>High risk</span><strong id="stat-high">0</strong><small>Potential phishing</small></div>
+        <div class="stat-card"><span>Suspicious</span><strong id="stat-medium">0</strong><small>Needs attention</small></div>
+      </section>
+
+      <section class="history-card">
+        <div class="history-heading">
+          <div><div class="eyebrow">ACTIVITY</div><h2>Recent scans</h2></div>
+          <button id="clear-history" class="clear-button" type="button">Clear history</button>
+        </div>
+        <div id="history-list" class="history-list">
+          <div class="empty-state">No scans yet. Check a URL to get started.</div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>PhishShield · College project prototype</span>
+      <span>URL analysis only · No website is visited</span>
+    </footer>
+  </div>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
