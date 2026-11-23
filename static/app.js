@@ -1,133 +1,17 @@
-const form = document.getElementById("scan-form");
-const input = document.getElementById("url-input");
-const scanButton = document.getElementById("scan-button");
-const resultCard = document.getElementById("result-card");
-const errorBox = document.getElementById("error-box");
-
-function showError(message) {
-  errorBox.textContent = message;
-  errorBox.classList.remove("hidden");
-}
-function clearError() {
-  errorBox.textContent = "";
-  errorBox.classList.add("hidden");
-}
-function setLoading(loading) {
-  scanButton.disabled = loading;
-  scanButton.querySelector("span:first-child").textContent = loading ? "Scanning..." : "Scan URL";
-}
-function renderResult(data) {
-  resultCard.classList.remove("hidden");
-  document.getElementById("verdict-title").textContent = data.verdict;
-  document.getElementById("risk-score").textContent = data.risk_score;
-  document.getElementById("scanned-url").textContent = data.url;
-  document.getElementById("ml-score").textContent = `${data.ml_score}%`;
-  document.getElementById("rule-score").textContent = `${data.rule_score}/100`;
-  document.getElementById("disclaimer").textContent = data.disclaimer;
-
-  const ring = document.getElementById("risk-ring");
-  const fill = document.getElementById("score-fill");
-  const colors = { low: "var(--green)", medium: "var(--orange)", high: "var(--red)" };
-  ring.style.borderColor = colors[data.level];
-  document.getElementById("verdict-title").style.color = colors[data.level];
-  fill.style.width = `${data.risk_score}%`;
-  fill.style.background = colors[data.level];
-
-  const list = document.getElementById("reason-list");
-  list.replaceChildren();
-  data.reasons.forEach((reason) => {
-    const item = document.createElement("li");
-    item.textContent = reason;
-    list.appendChild(item);
-  });
-}
-function renderHistory(items) {
-  const container = document.getElementById("history-list");
-  container.replaceChildren();
-  if (!items.length) {
-    const empty = document.createElement("div");
-    empty.className = "empty-state";
-    empty.textContent = "No scans yet. Check a URL to get started.";
-    container.appendChild(empty);
-    return;
-  }
-  items.forEach((item) => {
-    const row = document.createElement("div");
-    row.className = "history-item";
-
-    const left = document.createElement("div");
-    const url = document.createElement("div");
-    url.className = "history-url";
-    url.textContent = item.url;
-    url.title = item.url;
-    const time = document.createElement("div");
-    time.className = "history-time";
-    time.textContent = new Date(item.scanned_at).toLocaleString();
-    left.append(url, time);
-
-    const right = document.createElement("div");
-    right.className = "history-right";
-    const score = document.createElement("span");
-    score.className = "history-score";
-    score.textContent = `${item.risk_score}/100`;
-    const pill = document.createElement("span");
-    pill.className = `pill ${item.level}`;
-    pill.textContent = item.verdict;
-    right.append(score, pill);
-    row.append(left, right);
-    container.appendChild(row);
-  });
-}
-async function loadHistory() {
-  try {
-    const response = await fetch("/api/history");
-    const data = await response.json();
-    renderHistory(data.history || []);
-    document.getElementById("stat-total").textContent = data.stats.total;
-    document.getElementById("stat-high").textContent = data.stats.high_risk;
-    document.getElementById("stat-medium").textContent = data.stats.suspicious;
-  } catch {
-    // The scanner remains usable; history can refresh on the next page load.
-  }
-}
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  clearError();
-  resultCard.classList.add("hidden");
-  setLoading(true);
-  try {
-    const response = await fetch("/api/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: input.value })
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Unable to scan this URL.");
-    renderResult(data);
-    await loadHistory();
-  } catch (error) {
-    showError(error.message || "Could not connect to PhishShield. Is the Flask server running?");
-  } finally {
-    setLoading(false);
-  }
-});
-
-document.querySelectorAll(".sample").forEach((button) => {
-  button.addEventListener("click", () => {
-    input.value = button.dataset.url;
-    input.focus();
-  });
-});
-
-document.getElementById("clear-history").addEventListener("click", async () => {
-  if (!confirm("Clear all saved scan history?")) return;
-  try {
-    await fetch("/api/history/clear", { method: "POST" });
-    await loadHistory();
-  } catch {
-    showError("Could not clear scan history.");
-  }
-});
-
-loadHistory();
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function nav(page){$$(".page").forEach(p=>p.classList.toggle("active",p.id==="page-"+page));$$(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const t={dashboard:"Dashboard",scanner:"URL Scanner",history:"Scan History",analytics:"Analytics & Models",analysis:"Security Analysis"};$("#page-title").textContent=t[page]||"Dashboard";if(page==="history")loadHistory();if(page==="analytics")loadModels();}
+$$("[data-page]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.page)));
+function badge(level,verdict){return '<span class="badge '+level+'">'+esc(verdict)+'</span>';}
+function table(items){if(!items.length)return '<div class="empty">No scans recorded. Submit a URL to begin.</div>';return '<table><thead><tr><th>URL</th><th>Risk score</th><th>Classification</th><th>Scanned</th></tr></thead><tbody>'+items.map(x=>'<tr><td class="url-cell" title="'+esc(x.url)+'">'+esc(x.url)+'</td><td><span class="score '+(x.level==="high"?"danger":x.level==="medium"?"warning":"safe")+'">'+x.risk_score+'/100</span></td><td>'+badge(x.level,x.verdict)+'</td><td class="date-cell">'+esc(new Date(x.scanned_at).toLocaleString())+'</td></tr>').join("")+'</tbody></table>';}
+function stats(s){$("#total-scans").textContent=s.total||0;$("#phishing-count").textContent=s.phishing_detected||0;$("#legitimate-count").textContent=s.legitimate_detected||0;$("#suspicious-count").textContent=s.suspicious||0;const d=s.risk_distribution||{},lo=d.low||0,mi=d.medium||0,hi=d.high||0,total=lo+mi+hi;$("#risk-total").textContent=total;$("#risk-low").textContent=lo;$("#risk-mid").textContent=mi;$("#risk-high").textContent=hi;const a=total?lo/total*100:0,b=total?mi/total*100:0;$("#risk-donut").style.background=total?'conic-gradient(var(--green) 0 '+a+'%,var(--amber) '+a+'% '+(a+b)+'%,var(--red) '+(a+b)+'% 100%)':'var(--surface-2)';}
+async function loadDashboard(){try{const r=await fetch("/api/history?limit=8"),d=await r.json();stats(d.stats);$("#recent-table").innerHTML=table(d.history||[]);}catch(e){$("#recent-table").innerHTML='<div class="empty">Dashboard data unavailable.</div>';}}
+async function loadHistory(){try{const q=new URLSearchParams({limit:"100",q:$("#history-search").value,level:$("#history-filter").value});const r=await fetch("/api/history?"+q),d=await r.json();$("#history-table").innerHTML=table(d.history||[]);}catch(e){$("#history-table").innerHTML='<div class="empty">History unavailable.</div>';}}
+function showResult(d){const root=$("#scan-result");root.classList.remove("hidden");const color=d.level==="high"?"var(--red)":d.level==="medium"?"var(--amber)":"var(--green)";const reasons=(d.reasons||[]).map(r=>'<li><b>'+esc(r.feature||"Signal")+'</b> · '+esc(r.message)+'<small>'+esc(r.detail||"")+'</small></li>').join("");const feats=d.features||{};root.innerHTML='<div class="result-head"><div><small>SCAN VERDICT</small><h2 style="color:'+color+'">'+esc(d.verdict)+'</h2></div><div class="score-ring" style="border-color:'+color+'"><b>'+d.risk_score+'</b><small>/100</small></div></div><div class="result-url">'+esc(d.url)+'</div><div class="result-bar"><i style="width:'+d.risk_score+'%;background:'+color+'"></i></div><div class="result-metrics"><div><small>ML phishing score</small><b>'+d.ml_score+'%</b></div><div><small>Rule score</small><b>'+d.rule_score+'/100</b></div><div><small>Model</small><b>'+esc(d.model_name||"Model")+'</b></div></div><h4>Why was this URL flagged?</h4><ul class="reason-list">'+(reasons||'<li>No notable rule triggers.</li>')+'</ul><details class="feature-details"><summary>URL feature details</summary><div class="feature-grid">'+Object.entries(feats).map(x=>'<span>'+esc(x[0].replaceAll("_"," "))+'</span><b>'+esc(x[1])+'</b>').join("")+'</div></details><p class="disclaimer">'+esc(d.disclaimer||"URL-only analysis; low risk is not a guarantee.")+'</p>';root.scrollIntoView({behavior:"smooth",block:"nearest"});}
+async function scan(input,button){const url=input.value.trim();if(!url)return;const old=button.textContent;button.disabled=true;button.textContent="Analyzing…";try{const r=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:url})}),d=await r.json();if(!r.ok)throw new Error(d.error||"Scan failed");showResult(d);await loadDashboard();await loadHistory();}catch(e){alert(e.message||"Scan failed");}finally{button.disabled=false;button.textContent=old;}}
+$("#scan-form").addEventListener("submit",e=>{e.preventDefault();scan($("#url-input"),$("#scan-button"));});
+$("#scan-form-secondary").addEventListener("submit",e=>{e.preventDefault();scan($("#url-input-secondary"),e.submitter);});
+$("#history-search").addEventListener("input",loadHistory);$("#history-filter").addEventListener("change",loadHistory);
+$("#clear-history").addEventListener("click",async()=>{if(!confirm("Permanently clear saved scan history?"))return;await fetch("/api/history/clear",{method:"POST"});await loadDashboard();await loadHistory();});
+async function loadModels(){const root=$("#model-report");try{const r=await fetch("/api/models"),d=await r.json();if(!d.models){root.innerHTML='<div class="empty">'+esc(d.message||"Evaluation report not yet generated")+'<p>Run <code>python train_model.py --download-dataset</code> to download dataset and train/evaluate models.</p></div>';return;}const rows=Object.entries(d.models).map(([n,m])=>'<tr><td>'+esc(n)+'</td><td>'+m.accuracy+'</td><td>'+m.precision+'</td><td>'+m.recall+'</td><td>'+m.f1+'</td></tr>').join("");const name=d.selected_model,cm=d.confusion_matrices[name]||[[0,0],[0,0]],fi=(d.feature_importance||[]).slice(0,10).map(f=>'<div class="importance-row"><span>'+esc(f.feature.replaceAll("_"," "))+'</span><i><b style="width:'+Math.max(2,f.importance*100)+'%"></b></i><small>'+f.importance+'</small></div>').join("");root.innerHTML='<div class="report-meta"><div><small>Dataset samples</small><b>'+Number(d.dataset_size||0).toLocaleString()+'</b></div><div><small>Train samples</small><b>'+Number(d.split.train||0).toLocaleString()+'</b></div><div><small>Test samples</small><b>'+Number(d.split.test||0).toLocaleString()+'</b></div><div><small>Selected model</small><b>'+esc(name||"N/A")+'</b></div></div><div class="table-wrap"><table><thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1-score</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="model-lower"><div><h4>Confusion matrix · '+esc(name)+'</h4><table class="matrix"><thead><tr><th></th><th>Pred. Legit</th><th>Pred. Phish</th></tr></thead><tbody><tr><th>Actual Legit</th><td>'+cm[0][0]+'</td><td>'+cm[0][1]+'</td></tr><tr><th>Actual Phish</th><td>'+cm[1][0]+'</td><td>'+cm[1][1]+'</td></tr></tbody></table></div><div><h4>Feature importance (top 10)</h4>'+fi+'</div></div><p class="hint">Held-out stratified test metrics. Selected model is highest F1, with recall as tie-breaker. '+esc(d.note||"")+'</p>';}catch(e){root.innerHTML='<div class="empty">Model report unavailable.</div>';}}
+loadDashboard();
