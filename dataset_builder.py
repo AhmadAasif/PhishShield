@@ -1,10 +1,9 @@
-"""Build a cleaned labeled URL CSV from public feeds. Never visits URLs in the feed."""
-import csv, io, zipfile
+"""Build cleaned labels from public URLhaus and Tranco files. Does not visit feed URLs."""
+import csv,io,zipfile
 from pathlib import Path
-from urllib.request import Request, urlopen
-ROOT=Path(__file__).resolve().parent; DATA=ROOT/"data"; OUT=DATA/"training_urls.csv"
-URLHAUS="https://urlhaus.abuse.ch/downloads/csv/"
-TRANCO="https://tranco-list.eu/top-1m.csv.zip"
+from urllib.request import Request,urlopen
+ROOT=Path(__file__).resolve().parent;DATA=ROOT/"data";OUT=DATA/"training_urls.csv"
+URLHAUS="https://urlhaus.abuse.ch/downloads/csv/";TRANCO="https://tranco-list.eu/top-1m.csv.zip"
 def get(url):
  req=Request(url,headers={"User-Agent":"PhishShieldDatasetBuilder/1.0"})
  with urlopen(req,timeout=90) as r:return r.read()
@@ -14,43 +13,36 @@ def clean(s):
  if not s.startswith(("http://","https://")):s="https://"+s
  return s
 def phishing_rows():
- text=get(URLHAUS).decode("utf-8",errors="replace")
- rows=[]
+ text=get(URLHAUS).decode("utf-8",errors="replace");out=[]
  reader=csv.reader(line for line in text.splitlines() if line and not line.startswith("#"))
- for r in reader:
-  if r:
-   u=clean(r[1] if len(r)>1 else r[0])
-   if u:rows.append((u,1))
- return rows
+ for row in reader:
+  if row:
+   u=clean(row[1] if len(row)>1 else row[0])
+   if u:out.append((u,1))
+ return out
 def legit_rows(limit=100000):
- archive=zipfile.ZipFile(io.BytesIO(get(TRANCO)))
- name=next(n for n in archive.namelist() if n.lower().endswith(".csv"))
- rows=[]
- with archive.open(name) as f:
-  for r in csv.reader(io.TextIOWrapper(f,encoding="utf-8",errors="replace")):
-   if not r:continue
-   domain=clean(r[1] if len(r)>1 and r[0].isdigit() else r[0])
-   if domain:rows.append((domain,0))
-   if len(rows)>=limit:break
- return rows
+ z=zipfile.ZipFile(io.BytesIO(get(TRANCO)));name=next(n for n in z.namelist() if n.lower().endswith(".csv"));out=[]
+ with z.open(name) as f:
+  for row in csv.reader(io.TextIOWrapper(f,encoding="utf-8",errors="replace")):
+   if not row:continue
+   u=clean(row[1] if len(row)>1 and row[0].isdigit() else row[0])
+   if u:out.append((u,0))
+   if len(out)>=limit:break
+ return out
 def main():
- DATA.mkdir(parents=True,exist_ok=True)
- print("Downloading public URLhaus phishing feed...")
- bad=phishing_rows(); print("Phishing feed rows:",len(bad))
- print("Downloading Tranco ranking...")
- good=legit_rows()
- seen={}; removed=0
- # Dedupe by normalized URL. Drop conflicting labels rather than silently choosing one.
- for url,label in bad+good:
-  key=url.lower().rstrip("/")
-  if key in seen:
-   if seen[key][1]!=label:seen[key]=None
-   removed+=1
-  else:seen[key]=(url,label)
- records=[x for x in seen.values() if x]
+ DATA.mkdir(parents=True,exist_ok=True);print("Downloading URLhaus phishing feed...");bad=phishing_rows();print("Phishing feed rows:",len(bad))
+ print("Downloading Tranco top-domain archive...");good=legit_rows()
+ unique={};conflicts=set();duplicates=0
+ for u,y in bad+good:
+  key=u.lower().rstrip("/")
+  if key in unique:
+   duplicates+=1
+   if unique[key][1]!=y:conflicts.add(key)
+  else:unique[key]=(u,y)
+ records=[item for key,item in unique.items() if key not in conflicts]
  with OUT.open("w",newline="",encoding="utf-8") as f:
   w=csv.writer(f);w.writerow(["url","label"]);w.writerows(records)
- print(f"Saved {len(records):,} unique samples; duplicates/conflicts removed: {removed:,}")
- print("Class counts:",sum(y==0 for _,y in records),"legitimate,",sum(y==1 for _,y in records),"phishing")
- print("Sources: URLhaus and Tranco. URL entries are not visited.")
+ print(f"Saved {len(records):,} clean unique URLs; duplicate/conflicting keys removed: {duplicates:,}")
+ print(f"Legitimate={sum(y==0 for _,y in records):,}; phishing={sum(y==1 for _,y in records):,}")
+ print("Source feeds are downloaded as data. URL entries are not opened.")
 if __name__=="__main__":main()
