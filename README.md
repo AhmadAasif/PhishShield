@@ -1,107 +1,69 @@
-# PhishShield
-**An Intelligent Machine Learning-Based Phishing URL Detection and Risk Analysis System**
+# PhishShield 2.0
+PhishShield is an educational URL-text phishing screening app combining URL feature extraction, a machine-learning model, transparent rules, and SQLite scan history in a dark analytics dashboard.
 
-PhishShield is a local Flask web application that analyses URL text and highlights possible phishing indicators. It combines a Random Forest classifier with explainable URL rules and stores scan history in SQLite.
+**Safety boundary:** submitted URLs are never opened, fetched, crawled or followed. Analysis uses the URL string only. Low risk is not proof of safety.
 
 ## Features
-- URL input and validation
-- Feature extraction from URL structure
-- Random Forest machine-learning classification
-- Explainable URL warning signals
-- Combined risk score from 0 to 100
-- Low Risk / Suspicious / Likely Phishing result
-- SQLite scan history and dashboard statistics
-- Runs locally; submitted websites are never opened or fetched
+- Dashboard statistics, risk distribution and recent scan activity
+- URL scan with ML score, rule score, explainable signals and feature details
+- Search/filter history
+- Public dataset preparation using URLhaus phishing feed and Tranco ranking
+- Stratified 80/20 train/test model evaluation for Random Forest, Logistic Regression and Decision Tree
+- Accuracy, precision, recall, F1-score and per-model confusion matrices
+- Select model by held-out F1, recall as tie-breaker; save model and JSON report
 
-## Requirements
-- Python 3.10 or newer
-- Internet connection for the first package installation
-- Windows, macOS or Linux
-
-## Run on Windows (quickest)
-1. Extract the ZIP file.
-2. Open the `PhishShield` folder.
-3. Double-click `start_windows.bat`.
-4. Wait for package installation and model training to finish.
-5. Open **http://127.0.0.1:5000** in your browser.
-
-If Windows blocks the batch file, open PowerShell in this folder and run:
+## Install and run
+Python 3.10+ recommended. Windows quick-start: double-click `start_windows.bat`. Manual:
 
 ```powershell
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python app.py
 ```
+Open http://127.0.0.1:5000
 
-Then open http://127.0.0.1:5000.
+## Download public dataset and evaluate
+Sources:
+- URLhaus feed: https://urlhaus.abuse.ch/downloads/csv/
+- Tranco top-domain list: https://tranco-list.eu/
 
-## Run manually on macOS/Linux
+Run:
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-python app.py
+python dataset_builder.py
+python train_models.py
 ```
-
-## Train the model again
-The model is trained automatically the first time the app starts. To rebuild it from the included CSV:
-
+One-step:
 ```bash
-python train_model.py
+python train_model.py --download-dataset
 ```
+The pipeline filters invalid/empty entries, normalizes scheme, deduplicates URL strings and excludes conflicting duplicate labels, validates binary labels, then uses stratified 80% training and 20% testing. Metrics are calculated on the held-out test split. Generated files:
+- `model/phishshield_model.joblib` selected model
+- `model/evaluation_report.json` dataset statistics, split counts, metrics, confusion matrices and feature importance
 
-The trained model is saved to `model/phishshield_model.joblib`.
+Dataset feeds change. Review sources, terms, freshness and labeling quality before formal use. Tranco-ranked domains are assumed legitimate labels but are not ground truth. Feed URLs are treated as data and never opened by PhishShield.
 
-## Project structure
-```text
-PhishShield/
-├── app.py
-├── detector.py
-├── database.py
-├── train_model.py
-├── requirements.txt
-├── start_windows.bat
-├── data/
-│   └── training_urls.csv
-├── model/
-│   └── (trained model is generated here)
-├── instance/
-│   └── (SQLite database is generated here)
-├── templates/
-│   └── index.html
-└── static/
-    ├── app.js
-    └── style.css
-```
+If no trained artifact exists, the app fits a fallback Random Forest using the small demonstration CSV. Run the dataset/training steps above to enable model comparison in Analytics.
 
-## How it works
-1. The user enters a URL.
-2. The application validates and normalizes the URL. It does not visit the website.
-3. Feature extraction calculates URL properties such as length, HTTPS usage, IP-address use, subdomain count, suspicious keywords, punycode, and domain structure.
-4. A Random Forest model estimates a phishing probability.
-5. Explainable rules calculate additional risk indicators.
-6. The two scores are combined: **40% model score + 60% rule score**.
-7. The result, reasons and timestamp are saved to SQLite.
+## Metric meanings
+- Accuracy: fraction of all predictions correct
+- Precision: fraction of phishing predictions that are labeled phishing
+- Recall: fraction of phishing test URLs detected
+- F1: harmonic mean of precision and recall
+- Confusion matrix rows = actual (Legitimate, Phishing), columns = predicted (Legitimate, Phishing)
 
-## Important academic and security limitations
-- The included `training_urls.csv` is a small, hand-labelled **demonstration dataset** so the project runs immediately. It is not a representative production dataset.
-- Do not claim that the sample dataset proves high real-world accuracy. For a formal evaluation, replace it with a larger, properly labelled public phishing/legitimate URL dataset, remove duplicates, split it into training and test sets, and report precision, recall, F1-score and a confusion matrix.
-- A low-risk result does **not** prove that a site is safe. New phishing URLs may not match known patterns.
-- The tool analyses URL text only. It does not inspect page content, certificates, redirects or email messages.
-- This is an educational prototype, not a replacement for browser security or professional threat intelligence.
+No model performance values are claimed until the training/evaluation script is run on the fetched dataset.
 
-## Main technologies
-- Python
-- Flask
-- scikit-learn (Random Forest)
-- SQLite
-- HTML, CSS and JavaScript
+## API
+- `GET /` dashboard
+- `POST /api/scan` JSON body `{"url":"https://example.com"}`
+- `GET /api/history?limit=100&q=&level=` scan history, stats, optional filters
+- `GET /api/stats` counters
+- `GET /api/models` saved evaluation report
+- `POST /api/history/clear` clear records
 
-## API endpoints
-- `GET /` - dashboard
-- `POST /api/scan` - scan a URL; JSON body: `{"url": "https://example.com"}`
-- `GET /api/history` - recent scans and statistics
-- `POST /api/history/clear` - clear scan history
+## Hybrid risk score
+40% ML phishing probability + 60% rule score. Score 0–29 Low Risk, 30–59 Suspicious, 60–100 Likely Phishing. These are heuristic thresholds, not calibrated probabilities.
+
+## Limitations
+URL-string analysis only; no page content, redirects, DNS, certificates or email inspection. Dataset labels can be noisy; ranked domains can be compromised. False positives and false negatives are possible. Educational prototype, not browser protection.
