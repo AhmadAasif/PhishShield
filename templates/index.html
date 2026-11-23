@@ -1,101 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="PhishShield checks website URLs for phishing indicators using machine learning and URL analysis.">
-  <title>PhishShield | URL Security Scanner</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <div class="page-shell">
-    <header class="topbar">
-      <a class="brand" href="/">
-        <span class="brand-mark">⛨</span>
-        <span>Phish<span>Shield</span></span>
-      </a>
-      <span class="top-tag"><span class="live-dot"></span> LOCAL SECURITY SCANNER</span>
-    </header>
-
-    <main>
-      <section class="hero">
-        <div class="eyebrow">MACHINE LEARNING · CYBERSECURITY</div>
-        <h1>Check before<br><span>you click.</span></h1>
-        <p class="hero-copy">Analyse a website address for phishing indicators. PhishShield combines a Random Forest model with explainable URL checks.</p>
-      </section>
-
-      <section class="scanner-card">
-        <div class="section-heading">
-          <div>
-            <div class="eyebrow">URL ANALYSIS</div>
-            <h2>Scan a website</h2>
-          </div>
-          <span class="lock-icon">⌑</span>
-        </div>
-
-        <form id="scan-form">
-          <label for="url-input">Website URL</label>
-          <div class="input-row">
-            <span class="input-prefix">↗</span>
-            <input id="url-input" type="text" autocomplete="url" placeholder="https://example.com" maxlength="2048" required>
-            <button id="scan-button" type="submit"><span>Scan URL</span><span aria-hidden="true">→</span></button>
-          </div>
-          <div class="input-help">Enter a domain or full URL. The submitted website is not opened.</div>
-        </form>
-
-        <div class="samples">
-          <span>Try an example:</span>
-          <button class="sample safe-sample" type="button" data-url="https://www.wikipedia.org">Normal URL</button>
-          <button class="sample risky-sample" type="button" data-url="http://paypal-security-check.example.test/login">Phishing-like URL</button>
-        </div>
-
-        <div id="error-box" class="error-box hidden" role="alert"></div>
-
-        <section id="result-card" class="result-card hidden" aria-live="polite">
-          <div class="result-top">
-            <div>
-              <div class="eyebrow">SCAN RESULT</div>
-              <h3 id="verdict-title">Result</h3>
-            </div>
-            <div id="risk-ring" class="risk-ring">
-              <strong id="risk-score">0</strong><span>/100</span>
-            </div>
-          </div>
-          <div class="scanned-url" id="scanned-url"></div>
-          <div class="score-track"><div id="score-fill" class="score-fill"></div></div>
-          <div class="score-labels"><span>Lower risk</span><span>Higher risk</span></div>
-          <div class="result-grid">
-            <div class="metric"><span>ML phishing score</span><strong id="ml-score">0%</strong></div>
-            <div class="metric"><span>URL rule score</span><strong id="rule-score">0/100</strong></div>
-          </div>
-          <div class="reason-heading">Why this result?</div>
-          <ul id="reason-list" class="reason-list"></ul>
-          <p class="disclaimer" id="disclaimer"></p>
-        </section>
-      </section>
-
-      <section class="stats-grid">
-        <div class="stat-card"><span>Total scans</span><strong id="stat-total">0</strong><small>URLs checked</small></div>
-        <div class="stat-card"><span>High risk</span><strong id="stat-high">0</strong><small>Potential phishing</small></div>
-        <div class="stat-card"><span>Suspicious</span><strong id="stat-medium">0</strong><small>Needs attention</small></div>
-      </section>
-
-      <section class="history-card">
-        <div class="history-heading">
-          <div><div class="eyebrow">ACTIVITY</div><h2>Recent scans</h2></div>
-          <button id="clear-history" class="clear-button" type="button">Clear history</button>
-        </div>
-        <div id="history-list" class="history-list">
-          <div class="empty-state">No scans yet. Check a URL to get started.</div>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <span>PhishShield · College project prototype</span>
-      <span>URL analysis only · No website is visited</span>
-    </footer>
-  </div>
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PhishShield | Security Console</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head><body>
+<div class="app-shell"><aside class="sidebar"><a class="brand" href="#" data-page="dashboard"><span class="brand-icon">◈</span><span>PHISH<span>SHIELD</span><small>URL THREAT INTELLIGENCE</small></span></a><div class="nav-caption">WORKSPACE</div><button class="nav-item active" data-page="dashboard">▦ Dashboard</button><button class="nav-item" data-page="scanner">⌕ URL Scanner</button><button class="nav-item" data-page="history">◷ Scan History</button><div class="nav-caption">INTELLIGENCE</div><button class="nav-item" data-page="analytics">▤ Analytics & Models</button><button class="nav-item" data-page="analysis">⬡ Security Analysis</button><div class="sidebar-bottom"><div class="local-pill"><i></i> LOCAL ANALYSIS</div><small>URLs are analyzed as text.<br>No websites are opened.</small></div></aside>
+<main class="main"><header class="topbar"><div><span class="top-kicker">SECURITY OPERATIONS</span><h1 id="page-title">Dashboard</h1></div><div class="top-right"><span class="status-chip"><i></i> SYSTEM READY</span><div class="avatar">PS</div></div></header>
+<section class="page active" id="page-dashboard"><div class="welcome-row"><div><h2>Threat overview</h2><p>Monitor URL scan activity and risk distribution.</p></div><button class="primary-btn" data-page="scanner">＋ New scan</button></div>
+<div class="stats-grid"><article class="stat-card"><div class="stat-top"><span>Total URLs scanned</span><span class="stat-icon blue">⌕</span></div><strong id="total-scans">0</strong><small>All recorded scans</small></article><article class="stat-card"><div class="stat-top"><span>Phishing detected</span><span class="stat-icon red">⚠</span></div><strong class="danger" id="phishing-count">0</strong><small>High-risk classification</small></article><article class="stat-card"><div class="stat-top"><span>Legitimate / low risk</span><span class="stat-icon green">✓</span></div><strong class="safe" id="legitimate-count">0</strong><small>Low-risk classification</small></article><article class="stat-card"><div class="stat-top"><span>Suspicious</span><span class="stat-icon amber">◉</span></div><strong class="warning" id="suspicious-count">0</strong><small>Needs attention</small></article></div>
+<div class="dashboard-grid"><article class="panel risk-panel"><div class="panel-heading"><div><h3>Risk distribution</h3><p>Saved scan verdicts</p></div><span class="live-label">DATABASE</span></div><div class="risk-content"><div class="donut" id="risk-donut"><div class="donut-inner"><strong id="risk-total">0</strong><span>scans</span></div></div><div class="legend"><div><i class="dot green"></i><span>Low risk</span><b id="risk-low">0</b></div><div><i class="dot amber"></i><span>Suspicious</span><b id="risk-mid">0</b></div><div><i class="dot red"></i><span>High risk</span><b id="risk-high">0</b></div></div></div></article>
+<article class="panel scan-panel"><div class="panel-heading"><div><h3>Quick URL scan</h3><p>Check a link before you click it.</p></div><span class="scan-mark">⌕</span></div><form id="scan-form"><label for="url-input">Website address</label><div class="scan-input"><input id="url-input" type="text" maxlength="2048" autocomplete="url" placeholder="https://example.com" required><button id="scan-button" type="submit">Analyze →</button></div><p class="hint">URL text only. No page requests, redirects or browsing.</p></form><div id="error-box" class="error hidden"></div></article></div>
+<article class="panel activity-panel"><div class="panel-heading"><div><h3>Recent scan activity</h3><p>Latest saved scan results</p></div><button class="ghost-btn" data-page="history">View all scans →</button></div><div id="recent-table" class="table-wrap"></div></article></section>
+<section class="page" id="page-scanner"><article class="panel scanner-page"><div class="scanner-title"><span class="eyebrow">URL INTELLIGENCE</span><h2>Scan and monitor your URLs</h2><p>Evaluate URL structure and suspicious indicators using the PhishShield engine.</p></div><form id="scan-form-secondary"><label for="url-input-secondary">Enter URL</label><div class="scan-input"><input id="url-input-secondary" maxlength="2048" placeholder="https://domain.com" required><button type="submit">Analyze URL →</button></div></form><div class="result hidden" id="scan-result"></div></article></section>
+<section class="page" id="page-history"><article class="panel activity-panel"><div class="panel-heading"><div><h3>Scan history</h3><p>Search and filter previously scanned URLs.</p></div><button id="clear-history" class="ghost-btn danger-text">Clear history</button></div><div class="filters"><input id="history-search" placeholder="Search URL or verdict…"><select id="history-filter"><option value="">All results</option><option value="high">High risk</option><option value="medium">Suspicious</option><option value="low">Low risk</option></select></div><div id="history-table" class="table-wrap"></div></article></section>
+<section class="page" id="page-analytics"><article class="panel"><div class="panel-heading"><div><h3>Model evaluation</h3><p>Held-out test metrics. Train the models to populate this page.</p></div></div><div id="model-report" class="model-report"><div class="empty">Evaluation not generated. Run dataset preparation and training commands from README.</div></div></article></section>
+<section class="page" id="page-analysis"><article class="panel analysis-panel"><div class="panel-heading"><div><h3>Security analysis methodology</h3><p>How PhishShield interprets URL indicators</p></div></div><div class="analysis-cards"><div><b>Machine learning</b><p>Trained classifier estimates phishing probability using URL features.</p></div><div><b>Rule-based indicators</b><p>Transparent checks identify IP hosts, suspicious terms, brand mismatch, shorteners and unusual URL structure.</p></div><div><b>Hybrid score</b><p>40% ML probability and 60% rule score. Thresholds: 0–29 low, 30–59 suspicious, 60–100 high risk.</p></div><div><b>Privacy and safety</b><p>Submitted links are not opened, fetched, crawled or followed. URL text only.</p></div></div><div class="feature-note"><b>Important limitation</b><p>HTTPS, familiar brand names or a low score do not prove a website is safe. False positives and false negatives can occur.</p></div></article></section><footer>PhishShield <span>Educational prototype · URL text analysis only</span></footer></main></div><script src="{{ url_for('static', filename='app.js') }}"></script></body></html>
